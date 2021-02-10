@@ -7,7 +7,7 @@ class Table {
             search = true,
             sorting = true,
             pagination = true,
-            orderBy = { defaultColumn: "name", det: "ASC" },
+            orderBy = { defaultColumn: "Name", det: "ASC" },
             ...otherOptions
         }
     ){
@@ -78,31 +78,32 @@ class Table {
             tr.appendChild(th);
 
             if( i.title === this.orderBy.defaultColumn){
-                t.sortTable( tbody, tr.childNodes[ column.indexOf(i) ].textContent, this.orderBy.det );
+                t.sortTable( tbody, column.indexOf(i) , this.orderBy.det );
                 th.setAttribute('class',this.orderBy.det);
             }
 
             if(sorting){
                 th.addEventListener('click',function( event ) {
-                    var currentTh = event.target.childNodes[0].data;
+                    var target = event.target;
+                    var targetIndex = t.findChildNodeIndex( event.target );
 
-                    if( event.target.getAttribute('class') === "ASC" ){
-                        event.target.setAttribute('class',"DESC");
+                    if( target.getAttribute('class') === "ASC" ){
+                        target.setAttribute('class',"DESC");
                         t.orderBy.det = "DESC";
                     }
-                    else if( event.target.getAttribute('class') === "DESC" ){
-                        event.target.setAttribute('class',"ASC");
+                    else if( target.getAttribute('class') === "DESC" ){
+                        target.setAttribute('class',"ASC");
                         t.orderBy.det = "ASC";
                     }
-                    if(!event.target.getAttribute('class')){
+                    if(!target.getAttribute('class')){
                         for( var child of tr.childNodes ){
                             child.removeAttribute('class');
                         }
-                        event.target.setAttribute('class',"ASC");
+                        target.setAttribute('class',"ASC");
                         t.orderBy.det = "ASC";
                     }
 
-                    return t.sortTable( tbody, currentTh, t.orderBy.det );
+                    return t.sortTable( tbody, targetIndex, t.orderBy.det );
                 });
 
 
@@ -115,14 +116,14 @@ class Table {
 
     renderTbody( tbody, data ) {
         var column = this.column;
-console.log(data)
+
         if( data.length !== 0 ){
             for( var j of data ){
                 var tr = document.createElement('tr');
                 tbody.appendChild(tr);
                 for( var k of column ){
                     var td = document.createElement('td');
-                    var info = document.createTextNode(j[k.title]);
+                    var info = document.createTextNode( j[ column.indexOf(k) ] );
                     td.appendChild(info);
                     tr.appendChild(td);
                 }
@@ -131,7 +132,7 @@ console.log(data)
         else{
             var tr__notFound = document.createElement('tr');
             var td__notFound = document.createElement('td');
-            var info__notFound = document.createTextNode("Note Found");
+            var info__notFound = document.createTextNode("Not Found");
             td__notFound.appendChild(info__notFound);
             td__notFound.setAttribute('colspan',column.length);
             tr__notFound.appendChild(td__notFound);
@@ -153,14 +154,16 @@ console.log(data)
         }
     };
 
-    searchTable( val,tbody ) {
+    searchTable( val, tbody ) {
         var data = this.data;
         var column = this.column;
+
         var filteredData = [ ];
 
         for( var dataItem of data ){
             for( var columnItem of column ){
-                var dataField = dataItem[columnItem.title].replace(/ /g, "").toLowerCase();
+                var columnIndex = column.indexOf(columnItem);
+                var dataField = dataItem[columnIndex].replace(/ /g, "").toLowerCase();
 
                 if( dataField.indexOf(val) !== -1 ){
                     filteredData.push(dataItem);
@@ -173,30 +176,23 @@ console.log(data)
 
     };
 
-    removeAllChildNodes( parent ) {
-        while (parent.firstChild) {
-            parent.removeChild(parent.firstChild);
-        }
-    };
-
-    sortTable( tbody, sortableColumn, orderBy ){
-        console.log(sortableColumn)
+    sortTable( tbody, sortableColumnIndex, orderBy ){
         const data = this.data;
         const sortedData = data.sort( ( a, b ) => {
             if( orderBy === "ASC" ){
-                if( a[sortableColumn].toLowerCase() < b[sortableColumn].toLowerCase() ){
+                if( a[sortableColumnIndex].toLowerCase() < b[sortableColumnIndex].toLowerCase() ){
                     return -1;
                 }
-                if( a[sortableColumn].toLowerCase() > b[sortableColumn].toLowerCase() ){
+                if( a[sortableColumnIndex].toLowerCase() > b[sortableColumnIndex].toLowerCase() ){
                     return 1;
                 }
                 return 0;
             }
             else if( orderBy === "DESC" ){
-                if( a[sortableColumn].toLowerCase() > b[sortableColumn].toLowerCase() ){
+                if( a[sortableColumnIndex].toLowerCase() > b[sortableColumnIndex].toLowerCase() ){
                     return -1;
                 }
-                if( a[sortableColumn].toLowerCase() < b[sortableColumn].toLowerCase() ){
+                if( a[sortableColumnIndex].toLowerCase() < b[sortableColumnIndex].toLowerCase() ){
                     return 1;
                 }
                 return 0;
@@ -204,23 +200,31 @@ console.log(data)
 
 
         })
-        this.removeAllChildNodes( tbody )
-        this.renderTbody( tbody, sortedData )
+        this.removeAllChildNodes( tbody );
+        this.renderTbody( tbody, sortedData );
+    };
+
+    removeAllChildNodes( parent ) {
+        while (parent.firstChild) {
+            parent.removeChild(parent.firstChild);
+        }
+    };
+
+    findChildNodeIndex ( target ){
+
+        var currentParent = target.parentNode.childNodes;
+        var targetIndex;
+        for ( var j = 0; j < currentParent.length; ++j ) {
+            if ( target === currentParent[j] ) {
+                targetIndex = j;
+                break;
+            }
+        }
+        return targetIndex;
     };
 
 
-
-
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -264,27 +268,16 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
 
 
-    var dataSetWithObjs = dataSet.map(function(x) {
-        return {
-            name: x[0],
-            position: x[1],
-            office: x[2],
-            ext: x[3],
-            startDate: x[4],
-            salary: x[5]
-        };
-    });
-
     document.querySelector('#app').DataTable({
-        data: dataSetWithObjs,
+        data: dataSet,
         column: [
-            { title: "name" },
-            { title: "position" },
-            { title: "office" },
-            { title: "startDate" },
-            { title: "salary" },
+            { title: "Name" },
+            { title: "Position" },
+            { title: "Office" },
+            { title: "Ext." },
+            { title: "Start Date" },
+            { title: "Salary" },
         ],
-
 
     });
 

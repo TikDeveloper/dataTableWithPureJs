@@ -13,10 +13,6 @@
     justify-content: center;
 }
 
-
-
-
-
 .table {
     width: 768px;
 }
@@ -33,7 +29,7 @@
     width: 20px;
     height: 20px;
     top: 50%;
-    right: 5px;
+    right: 0;
     transform: translateY(-50%);
 }
 .ASC:after {
