@@ -1,0 +1,46 @@
+#app {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: black;
+}
+.headerSection {
+    width: 768px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+
+
+
+.table {
+    width: 768px;
+}
+.table thead th, .table tfoot th {
+    text-transform: capitalize;
+    position: relative;
+}
+.table tbody , .table tfoot {
+    border-top: 5px solid #3b5998;
+}
+.ASC:after, .DESC:after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 50%;
+    right: 5px;
+    transform: translateY(-50%);
+}
+.ASC:after {
+    background: url("assets/sort_asc.png") no-repeat;
+    background-size: cover;
+}
+.DESC:after {
+    background: url("assets/sort_desc.png") no-repeat;
+    background-size: cover;
+}
