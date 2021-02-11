@@ -12,6 +12,15 @@
     align-items: center;
     justify-content: center;
 }
+.footerSection{
+    padding: 20px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
 
 .table {
     width: 768px;
@@ -39,4 +48,23 @@
 .DESC:after {
     background: url("assets/sort_desc.png") no-repeat;
     background-size: cover;
+}
+.paginationSection {
+    display: flex;
+    height: 100px;
+    align-items: center;
+}
+.divPagination {
+    margin: 20px;
+}
+.pagination__links {
+    box-sizing: border-box;
+    padding: .5em 1em;
+    margin-left: 2px;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid #ffffff;
+    border-radius: 2px;
+    color: #ffffff !important;
 }
