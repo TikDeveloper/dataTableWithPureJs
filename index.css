@@ -1,9 +1,11 @@
-#app {
+#app{
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    background: black;
+}
+#example {
+    width: 768px;
+    background: #4c4c4c;
 }
 .headerSection {
     width: 768px;
@@ -23,7 +25,7 @@
 
 
 .table {
-    width: 768px;
+    width: 100%;
 }
 .table thead th, .table tfoot th {
     text-transform: capitalize;
@@ -49,14 +51,7 @@
     background: url("assets/sort_desc.png") no-repeat;
     background-size: cover;
 }
-.paginationSection {
-    display: flex;
-    height: 100px;
-    align-items: center;
-}
-.divPagination {
-    margin: 20px;
-}
+
 .pagination__links {
     box-sizing: border-box;
     padding: .5em 1em;
@@ -68,3 +63,29 @@
     border-radius: 2px;
     color: #ffffff !important;
 }
+.column__headings {
+    cursor: pointer;
+}
+.divSelect,.divPagination {
+    padding: 25px;
+}
+.divSelect {
+    float: left;
+}
+.divPagination {
+    float: right;
+}
+.activePage {
+    background: black;
+}
+/*#pagination__linkPrev, #pagination__linkNext{*/
+/*    box-sizing: border-box;*/
+/*    padding: .5em 1em;*/
+/*    margin-left: 2px;*/
+/*    text-align: center;*/
+/*    text-decoration: none;*/
+/*    cursor: pointer;*/
+/*    border: 1px solid #ffffff;*/
+/*    border-radius: 2px;*/
+/*    color: #ffffff !important;*/
+/*}*/

@@ -8,11 +8,11 @@ class Table {
             sorting = true,
             pagination = {
                 bool: true,
-                rows: 10,
+                rows: 5,
+                currentPage: 1,
             },
             orderBy = {
                 defaultColumnIndex: 0,
-                columnIndex: 0,
                 det: "ASC",
             },
             ...otherOptions
@@ -21,6 +21,7 @@ class Table {
 
         this.selector = selector;
         this.allData = data;
+        this.allDataClone = data;
         this.data = this.allData.slice(0,this.allData.length);
         this.column = column;
         this.sorting = sorting;
@@ -31,6 +32,8 @@ class Table {
         this.renderTable ();
 
 
+
+
     };
 
     renderTable() {
@@ -38,63 +41,246 @@ class Table {
             name: 'class',
             value: 'table table-bordered table-striped table-dark table-hover'
         } );
-
-
-        // table.appendChild ( tfoot );
+        this.tbody = this.crtNodeElement ('tbody');
+        this.thead = this.crtNodeElement('thead');
+        this.tfoot = this.crtNodeElement ( 'tfoot' );
+        var t = this;
 
         if (this.search) {
-            var t = this;
-            var input = this.crtNodeElement ( 'input', '', {name: 'placeholder', value: 'Search'} );
-            var div = this.crtNodeElement ( 'div', '', {name: 'class', value: 'headerSection'} );
-            div.appendChild ( input );
-            this.selector.appendChild ( div );
+            this.selector.innerHTML =
+                '<div class="headerSection">' +
+                '<input type="text" placeholder="Search" id="searchInp"/>' +
+                '</div>';
+
+        }
+        this.selector.appendChild( table );
 
 
-            input.addEventListener ( 'keyup', function (event) {
-                var val = event.target.value.replace ( / /g, "" ).toLowerCase ();
-                var filteredData = t.searchTable ( val );
-                t.data = t.sortTable ( t.orderBy.columnIndex, t.orderBy.det, filteredData );
-                if(t.pagination.bool){
-                    var divPagination = t.createPagination( t.data );
-                    var tableIndex = t.findChildNodeIndex ( table );
-                    t.selector.removeChild( t.selector.childNodes[tableIndex+1] )
-                    table.insertAdjacentElement('afterend', divPagination );
+        t.data = this.sortTable ( this.orderBy.defaultColumnIndex, this.orderBy.det, this.allData );
+        if(this.pagination.bool){
+            var divSelectElm =
+                '<div class="divSelect">' +
+                    '<select id="rowsSelect">' +
+                        '<option value="' + this.pagination.rows + '"> ' + this.pagination.rows + ' </option>' +
+                        '<option value="' + (this.pagination.rows+15) + '"> ' + (this.pagination.rows+15) + ' </option>' +
+                        '<option value="' + this.allData.length + '"> All </option>' +
+                    '</select>' +
+                '</div>';
+            var divPaginationElm  = this.createPagination ();
+
+
+
+            table.insertAdjacentHTML( 'afterend', divSelectElm );
+            table.insertAdjacentHTML( 'afterend', divPaginationElm );
+
+        }
+
+
+        this.renderThead();
+        this.renderTbody();
+        this.renderTfoot();
+
+
+
+        table.appendChild( this.thead );
+        table.appendChild( this.tbody );
+        table.appendChild( this.tfoot );
+
+
+        window.onload = function(){
+            if(t.sorting) {
+                document.querySelectorAll ( '.column__headings' ).forEach ( item => {
+                    if (item.addEventListener) {
+                        item.addEventListener ( "click", sortClick, false );
+                    } else if (item.attachEvent) {
+                        item.attachEvent ( "click", sortClick );
+                    }
+                });
+            }
+            if(t.pagination.bool) {
+                document.querySelectorAll('.pagination__links').forEach(item => {
+                    if (item.addEventListener) {
+                        if( item.className.indexOf( 'nextPage' ) !== -1 ) {
+                            item.addEventListener("click", paginationClickNext, false);
+                        }
+                        else if( item.className.indexOf( 'prevPage' ) !== -1 ) {
+                            item.addEventListener("click", paginationClickPrev, false);
+                        }
+                        else {
+                            item.addEventListener("click", paginationClick, false);
+                        }
+                    }
+                    else if (item.attachEvent) {
+                        if( item.className.indexOf( 'nextPage' ) !== -1 ) {
+                            item.attachEvent("click", paginationClickNext);
+                        }
+                        else if( item.className.indexOf( 'prevPage' ) !== -1 ) {
+                            item.attachEvent("click", paginationClickPrev);
+                        }
+                        else {
+                            item.attachEvent("click", paginationClick);
+                        }
+                    }
+                });
+                var rowsSelect = document.querySelector('#rowsSelect');
+                if (rowsSelect.addEventListener) {
+                    rowsSelect.addEventListener("change", selectChange, false);
+                }
+                else if (rowsSelect.attachEvent) {
+                    rowsSelect.attachEvent("change", selectChange);
                 }
 
+            }
+            if(t.search) {
+                var searchInp = document.querySelector('#searchInp');
+                if (searchInp.addEventListener) {
+                    searchInp.addEventListener("keyup", searchHandle, false);
+                } else if (searchInp.attachEvent) {
+                    searchInp.attachEvent("keyup", searchHandle);
+                }
+            }
 
-                var tbody = t.renderTbody();
-                table.removeChild(table.childNodes[1]);
-                thead.insertAdjacentElement('afterend', tbody );
-                table.removeChild(table.childNodes[2]);
-                var tfoot = t.renderTfoot();
-                tbody.insertAdjacentElement('afterend', tfoot );
-            } );
+            function sortClick(event) {
+                var target = event.target;
+                if (target.className.indexOf ( 'ASC' ) !== - 1) {
+                    target.className = "column__headings DESC";
+                    t.orderBy.det = "DESC";
+                } else if (target.className.indexOf ( 'DESC' ) !== - 1) {
+                    target.className = "column__headings ASC";
+                    t.orderBy.det = "ASC";
+                }
+                if (target.className.indexOf ( 'ASC' ) === - 1 && target.className.indexOf ( 'DESC' ) === - 1) {
+                    document.querySelectorAll ( '.column__headings' ).forEach ( item => {
+                        item.className = 'column__headings';
+                    } );
+                    target.className = "column__headings ASC";
+                    t.orderBy.det = "ASC";
+                }
+                var targetIndex = t.findChildNodeIndex ( event.target );
+                t.orderBy.defaultColumnIndex = targetIndex;
+                t.pagination.currentPage = 1;
+                t.data = t.sortTable ( targetIndex, t.orderBy.det );
+                var divPaginationElm = t.createPagination( t.data );
+                t.renderTbody ();
+                clearOldElmAndAddEvents( divPaginationElm );
+            }
+
+            function paginationClick(event) {
+                var target = event.target;
+
+                var rowsPerPage = t.pagination.rows;
+                var currentPage = Number( event.target.childNodes[0].data );
+
+                document.querySelectorAll ( '.page' ).forEach ( (item,index) => {
+                    if( index === currentPage - 1 ) {
+                        item.className = 'pagination__links page activePage';
+                    }
+                    else{
+                        item.className = 'pagination__links page';
+                    }
+                });
 
 
+                t.pagination.currentPage = currentPage;
+                t.data = t.allData.slice( (currentPage-1)*rowsPerPage, currentPage*rowsPerPage );
+                t.renderTbody ();
+            }
+
+            function selectChange(event) {
+                t.pagination.rows = event.target.value;
+                t.pagination.currentPage = 1;
+                var divPaginationElm = t.createPagination();
+                t.renderTbody();
+                clearOldElmAndAddEvents( divPaginationElm );
+            }
+
+            function searchHandle(event) {
+                var val = event.target.value.replace ( / /g, "" ).toLowerCase ();
+                var searchedData = t.searchTable ( val );
+                t.data = t.sortTable ( t.orderBy.defaultColumnIndex, t.orderBy.det, searchedData );
+                t.allData = searchedData;
+                if(t.pagination.bool){
+                    var divPaginationElm = t.createPagination( t.data );
+                    clearOldElmAndAddEvents( divPaginationElm );
+                }
+                t.renderTbody();
+            }
+
+            function paginationClickNext(event) {
+                var rowsPerPage = t.pagination.rows;
+                var pages = Math.ceil ( t.allData.length / rowsPerPage );
+                var currentPageOld = t.pagination.currentPage;
+                if(currentPageOld === pages){
+                    t.pagination.currentPage = 1;
+                }
+                else{
+                    t.pagination.currentPage = currentPageOld + 1;
+                }
+                var currentPageNew = t.pagination.currentPage;
+                document.querySelectorAll ( '.page' ).forEach ( (item,index) => {
+                    if( index === currentPageNew - 1 ) {
+                        item.className = 'pagination__links page activePage';
+                    }
+                    else{
+                        item.className = 'pagination__links page';
+                    }
+                });
+                t.data = t.allData.slice( (currentPageNew-1) * rowsPerPage, currentPageNew * rowsPerPage );
+                t.renderTbody ();
+            }
+
+            function paginationClickPrev(event) {
+                var rowsPerPage = t.pagination.rows;
+                var pages = Math.ceil ( t.allData.length / rowsPerPage );
+                var currentPageOld = t.pagination.currentPage;
+                if(currentPageOld === 1){
+                    t.pagination.currentPage = pages;
+                }
+                else{
+                    t.pagination.currentPage = currentPageOld - 1;
+                }
+                var currentPageNew = t.pagination.currentPage;
+                document.querySelectorAll ( '.page' ).forEach ( (item,index) => {
+                    if( index === currentPageNew - 1 ) {
+                        item.className = 'pagination__links page activePage';
+                    }
+                    else{
+                        item.className = 'pagination__links page';
+                    }
+                });
+                t.data = t.allData.slice( (currentPageNew-1) * rowsPerPage, currentPageNew * rowsPerPage );
+                t.renderTbody ();
+            }
+
+            function clearOldElmAndAddEvents( divPaginationElm ){
+                t.selector.removeChild( t.selector.childNodes[ t.selector.childNodes.length - 2 ] );
+                table.insertAdjacentHTML( 'afterend', divPaginationElm );
+                document.querySelectorAll('.pagination__links').forEach(item => {
+                    if (item.addEventListener) {
+                        if( item.className.indexOf( 'nextPage' ) !== -1 ) {
+                            item.addEventListener("click", paginationClickNext, false);
+                        }
+                        else if( item.className.indexOf( 'prevPage' ) !== -1 ) {
+                            item.addEventListener("click", paginationClickPrev, false);
+                        }
+                        else {
+                            item.addEventListener("click", paginationClick, false);
+                        }
+                    }
+                    else if (item.attachEvent) {
+                        if( item.className.indexOf( 'nextPage' ) !== -1 ) {
+                            item.attachEvent("click", paginationClickNext);
+                        }
+                        else if( item.className.indexOf( 'prevPage' ) !== -1 ) {
+                            item.attachEvent("click", paginationClickPrev);
+                        }
+                        else {
+                            item.attachEvent("click", paginationClick);
+                        }
+                    }
+                });
+            }
         }
-
-
-
-
-
-        this.selector.appendChild ( table );
-        this.data = this.sortTable ( this.orderBy.defaultColumnIndex, this.orderBy.det, this.data );
-        var thead = this.renderThead();
-        if(this.pagination.bool){
-            var divPagination = this.createPagination();
-            this.selector.appendChild( divPagination );
-        }
-        var tbody = this.renderTbody();
-        var tfoot = this.renderTfoot();
-
-        thead.childNodes[0].childNodes[this.orderBy.defaultColumnIndex].setAttribute ( 'class', this.orderBy.det );
-
-        table.appendChild ( thead );
-        table.appendChild ( tbody );
-        table.appendChild ( tfoot );
-
-
-
 
 
 
@@ -102,86 +288,49 @@ class Table {
     };
 
     renderThead() {
-        var thead = this.crtNodeElement('thead');
-        var sorting = this.sorting;
+        var thead = this.thead;
         var t = this;
         var column = this.column;
-        var tr = this.crtNodeElement ( 'tr' );
-        thead.appendChild ( tr );
+        var tr = '<tr>';
 
-        for ( var i of column ) {
-            var th = this.crtNodeElement ( 'th', i.title );
-            tr.appendChild ( th );
-            if (sorting) {
-                th.addEventListener ( 'click', function (event) {
-                    var target = event.target;
-                    var targetIndex = t.findChildNodeIndex ( event.target );
-                    t.orderBy.columnIndex = targetIndex;
-                    if (target.getAttribute ( 'class' ) === "ASC") {
-                        target.setAttribute ( 'class', "DESC" );
-                        t.orderBy.det = "DESC";
-                        t.data = t.sortTable ( targetIndex, t.orderBy.det, t.data );
-
-                    } else if (target.getAttribute ( 'class' ) === "DESC") {
-                        target.setAttribute ( 'class', "ASC" );
-                        t.orderBy.det = "ASC";
-                        t.data = t.sortTable ( targetIndex, t.orderBy.det, t.data );
-                    }
-                    if (!target.getAttribute ( 'class' )) {
-                        for ( var child of tr.childNodes ) {
-                            child.removeAttribute ( 'class' );
-                        }
-                        target.setAttribute ( 'class', "ASC" );
-                        t.orderBy.det = 'ASC';
-                        t.data = t.sortTable ( targetIndex, t.orderBy.det, t.data );
-                    }
-                    var tbody = t.renderTbody ();
-                    thead.parentNode.removeChild(thead.parentNode.childNodes[1]);
-                    thead.insertAdjacentElement('afterend', tbody );
-                } );
-                th.setAttribute ( 'style', 'cursor:pointer' );
+        for ( var i = 0; i < column.length; i++ ) {
+            if(i === this.orderBy.defaultColumnIndex){
+                tr += '<th class="column__headings '+ this.orderBy.det +' ">'+ column[i].title +'</th>';
+            }
+            else{
+                tr += '<th class="column__headings">'+ column[i].title +'</th>';
             }
         }
-        return thead;
+        tr += '</tr>';
+        thead.innerHTML = tr;
+
     };
 
     renderTbody() {
-        var tbody = this.crtNodeElement ( 'tbody' );
+        var tbody = this.tbody;
         var data = this.data;
         var column = this.column;
-
+        tbody.innerHTML = '';
         if (data.length !== 0) {
             for ( var j of data ) {
-                var tr = this.crtNodeElement ( 'tr' );
-                tbody.appendChild ( tr );
-                for ( var k of column ) {
-
-                    var td = this.crtNodeElement ( 'td', j[column.indexOf ( k )] );
-                    tr.appendChild ( td );
-                }
+                 var tr = '<tr>';
+                    for ( var k of column ) {
+                        tr += '<td>' + j[column.indexOf ( k )] + '</td>';
+                    }
+                tr += '</tr>';
+                tbody.innerHTML += tr;
             }
         } else {
-            var tr__notFound = this.crtNodeElement ( 'tr' );
-            var td__notFound = this.crtNodeElement (
-                'td',
-                'Not Found',
-                {
-                    name: 'colspan',
-                    value: column.length
-                } ,
-            );
-            tr__notFound.appendChild ( td__notFound );
-            tbody.appendChild ( tr__notFound );
+            tbody.innerHTML =
+                '<tr>' +
+                    '<td colspan=' + column.length + '>' + 'Not Found' + '</td>' +
+                '</tr>';
         }
-        return tbody;
     };
 
     renderTfoot() {
-        var tfoot = this.crtNodeElement ( 'tfoot' );
-        var data = this.data;
+        var tfoot = this.tfoot;
         var column = this.column;
-        var pagination = this.pagination;
-
 
         var tr = this.crtNodeElement ( 'tr' )
         tfoot.appendChild ( tr );
@@ -190,52 +339,10 @@ class Table {
             tr.appendChild ( th );
         }
 
-        if (pagination.bool) {
-            var t = this;
-            var paginationSectionElm = this.crtNodeElement (
-                'tr',
-                '',
-                {
-                    name: 'class',
-                    value: 'paginationSection',
-                }
-            );
-
-            var divSelectElm = this.crtNodeElement (
-                'div',
-                '',
-                {
-                    name: 'class',
-                    value: 'divSelect'
-                }
-            );
-            // var selectElm = this.crtNodeElement ( 'select' );
-            // for ( var j = 1; j <= pagesDefault; j ++ ) {
-            //     if (j * rowsPerPage > data.length) {
-            //         optionElm = t.crtNodeElement ( 'option', `${data.length}` );
-            //         selectElm.appendChild ( optionElm );
-            //         break;
-            //     }
-            //     var optionElm = t.crtNodeElement ( 'option', `${j * rowsPerPage}` );
-            //     selectElm.appendChild ( optionElm );
-            // }
-            // selectElm.appendChild ( optionElm );
-            // divSelectElm.appendChild ( selectElm );
-            // paginationSectionElm.appendChild ( divSelectElm );
-
-
-
-            // selectElm.addEventListener('change',function( event ){
-            //     rowsPerPage = Number(event.target.value);
-            //     t.paginationTable( rowsPerPage, tbody, divPaginationElm, t.data );
-            // });
-        }
-
-        return tfoot;
     };
 
     searchTable(val) {
-        var data = this.allData;
+        var data = this.allDataClone;
         var column = this.column;
         var filteredData = [];
         for ( var dataItem of data ) {
@@ -250,10 +357,9 @@ class Table {
             }
         }
         return filteredData;
-
     };
 
-    sortTable(sortableColumnIndex, orderBy, data) {
+    sortTable(sortableColumnIndex, orderBy, data = this.allData ) {
 
         return data.sort ( (a, b) => {
             if (orderBy === "ASC") {
@@ -279,40 +385,38 @@ class Table {
     createPagination( data = this.sortTable ( this.orderBy.defaultColumnIndex, this.orderBy.det, this.allData ) ) {
         var t = this;
         var rowsPerPage = this.pagination.rows;
+
         var pages = Math.ceil ( data.length / rowsPerPage );
-        var currentPage = 1;
-        var divPaginationElm = this.crtNodeElement (
-            'div',
-            '',
-            {
-                name: 'class',
-                value: 'divPagination',
-            }
-        );
-        for ( var k = 1; k <= pages; k++ ) {
-            var linkElm = this.crtNodeElement (
-                'a',
-                k,
-                {
-                    name: 'class',
-                    value: 'pagination__links'
-                },
-            );
-
-            linkElm.addEventListener ( 'click', function (event) {
-                currentPage = Number(event.target.childNodes[0].data);
-                t.data = data.slice( (currentPage-1)*rowsPerPage, currentPage*rowsPerPage );
-                var tbody = t.renderTbody ();
-                var oldTableIndex = t.findChildNodeIndex( divPaginationElm ) - 1;
-                var oldTbodyIndex = divPaginationElm.parentNode.childNodes[ oldTableIndex ].childNodes[ oldTableIndex - 1 ];
-                divPaginationElm.parentNode.childNodes[ oldTableIndex ].removeChild( oldTbodyIndex );
-                var thead = divPaginationElm.parentNode.childNodes[oldTableIndex].childNodes[0] ;
-                thead.insertAdjacentElement('afterend', tbody );
-            } );
-            divPaginationElm.appendChild ( linkElm );
+        var currentPage = t.pagination.currentPage;
+        var divPaginationElm = '<div class="divPagination">' ;
+        if(pages > 1){
+            divPaginationElm += '<a class="pagination__links prevPage"> Previous </a>';
         }
-        t.data = data.slice ( (currentPage - 1) * rowsPerPage, currentPage * rowsPerPage );
 
+        for ( var k = 1; k <= pages; k++ ) {
+            if(t.pagination.currentPage === k){
+                divPaginationElm +=
+                    '<a class="pagination__links page activePage" >'+
+                    k +
+                    '</a>';
+            }
+            else{
+                divPaginationElm +=
+                    '<a class="pagination__links page" >'+
+                    k +
+                    '</a>';
+            }
+
+
+        }
+        if(pages > 1){
+            divPaginationElm += '<a class="pagination__links nextPage"> Next </a>';
+        }
+
+        divPaginationElm += '</div>';
+
+
+        t.data = data.slice ( (currentPage - 1) * rowsPerPage, currentPage * rowsPerPage );
         return divPaginationElm;
     };
 
@@ -348,7 +452,7 @@ class Table {
 
 
         return element;
-    }
+    };
 
 }
 
@@ -393,7 +497,7 @@ document.addEventListener ( 'DOMContentLoaded', function () {
     ];
 
 
-    document.querySelector ( '#app' ).DataTable ( {
+    document.querySelector ( '#example' ).DataTable ( {
         data: dataSet,
         column: [
             {title: "Name"},
@@ -401,11 +505,10 @@ document.addEventListener ( 'DOMContentLoaded', function () {
             {title: "Office"},
             {title: "Ext."},
             {title: "Start Date"},
-            {title: "Salary"},
+            {title: "Price"},
         ]
 
-    } );
-
+    });
 
 } );
 
