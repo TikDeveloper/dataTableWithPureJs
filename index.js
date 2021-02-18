@@ -8,7 +8,7 @@ class Table {
             sorting = true,
             pagination = {
                 bool: true,
-                rows: 5,
+                rows: 10,
                 currentPage: 1,
             },
             orderBy = {
@@ -32,11 +32,10 @@ class Table {
         this.renderTable ();
 
 
-
-
     };
 
     renderTable() {
+
         var table = this.crtNodeElement ( 'table', '', {
             name: 'class',
             value: 'table table-bordered table-striped table-dark table-hover'
@@ -56,7 +55,6 @@ class Table {
         this.selector.appendChild( table );
 
 
-        t.data = this.sortTable ( this.orderBy.defaultColumnIndex, this.orderBy.det, this.allData );
         if(this.pagination.bool){
             var divSelectElm =
                 '<div class="divSelect">' +
@@ -166,9 +164,6 @@ class Table {
             }
 
             function paginationClick(event) {
-                var target = event.target;
-
-                var rowsPerPage = t.pagination.rows;
                 var currentPage = Number( event.target.childNodes[0].data );
 
                 document.querySelectorAll ( '.page' ).forEach ( (item,index) => {
@@ -180,10 +175,10 @@ class Table {
                     }
                 });
 
-
                 t.pagination.currentPage = currentPage;
-                t.data = t.allData.slice( (currentPage-1)*rowsPerPage, currentPage*rowsPerPage );
-                t.renderTbody ();
+                var divPaginationElm = t.createPagination();
+                t.renderTbody();
+                clearOldElmAndAddEvents( divPaginationElm );
             }
 
             function selectChange(event) {
@@ -207,49 +202,17 @@ class Table {
             }
 
             function paginationClickNext(event) {
-                var rowsPerPage = t.pagination.rows;
-                var pages = Math.ceil ( t.allData.length / rowsPerPage );
-                var currentPageOld = t.pagination.currentPage;
-                if(currentPageOld === pages){
-                    t.pagination.currentPage = 1;
-                }
-                else{
-                    t.pagination.currentPage = currentPageOld + 1;
-                }
-                var currentPageNew = t.pagination.currentPage;
-                document.querySelectorAll ( '.page' ).forEach ( (item,index) => {
-                    if( index === currentPageNew - 1 ) {
-                        item.className = 'pagination__links page activePage';
-                    }
-                    else{
-                        item.className = 'pagination__links page';
-                    }
-                });
-                t.data = t.allData.slice( (currentPageNew-1) * rowsPerPage, currentPageNew * rowsPerPage );
-                t.renderTbody ();
+                t.pagination.currentPage = t.pagination.currentPage + 1;
+                var divPaginationElm = t.createPagination();
+                t.renderTbody();
+                clearOldElmAndAddEvents( divPaginationElm );
             }
 
             function paginationClickPrev(event) {
-                var rowsPerPage = t.pagination.rows;
-                var pages = Math.ceil ( t.allData.length / rowsPerPage );
-                var currentPageOld = t.pagination.currentPage;
-                if(currentPageOld === 1){
-                    t.pagination.currentPage = pages;
-                }
-                else{
-                    t.pagination.currentPage = currentPageOld - 1;
-                }
-                var currentPageNew = t.pagination.currentPage;
-                document.querySelectorAll ( '.page' ).forEach ( (item,index) => {
-                    if( index === currentPageNew - 1 ) {
-                        item.className = 'pagination__links page activePage';
-                    }
-                    else{
-                        item.className = 'pagination__links page';
-                    }
-                });
-                t.data = t.allData.slice( (currentPageNew-1) * rowsPerPage, currentPageNew * rowsPerPage );
-                t.renderTbody ();
+                t.pagination.currentPage = t.pagination.currentPage - 1;
+                var divPaginationElm = t.createPagination();
+                t.renderTbody();
+                clearOldElmAndAddEvents( divPaginationElm );
             }
 
             function clearOldElmAndAddEvents( divPaginationElm ){
@@ -385,16 +348,43 @@ class Table {
     createPagination( data = this.sortTable ( this.orderBy.defaultColumnIndex, this.orderBy.det, this.allData ) ) {
         var t = this;
         var rowsPerPage = this.pagination.rows;
-
         var pages = Math.ceil ( data.length / rowsPerPage );
         var currentPage = t.pagination.currentPage;
+        var currentPageBefore = currentPage - 1;
+        var currentPageAfter = currentPage + 1;
+
         var divPaginationElm = '<div class="divPagination">' ;
-        if(pages > 1){
+        if( currentPage > 1 ){
             divPaginationElm += '<a class="pagination__links prevPage"> Previous </a>';
         }
+        if( pages >= 7){
+            if( currentPage > 2 ){
+                divPaginationElm += '<a class="pagination__links page"> 1 </a>';
+                if( currentPage > 3 ){
+                    divPaginationElm += '<a class="pagination__links"> ... </a>';
+                }
+            }
+            if( currentPage === pages ){
+                currentPageBefore = currentPageBefore - 1;
+            }
+            if( currentPage === 1 ){
+                currentPageAfter = currentPageAfter + 1;
+            }
+        }
+        else{
+            currentPageBefore = 0;
+            currentPageAfter = pages;
+        }
+        for ( var k = currentPageBefore; k <= currentPageAfter; k++ ) {
+            if( k > pages ){
+                continue;
+            }
+            if( k === 0 ){
+                k = k + 1;
+            }
 
-        for ( var k = 1; k <= pages; k++ ) {
-            if(t.pagination.currentPage === k){
+
+            if(currentPage === k){
                 divPaginationElm +=
                     '<a class="pagination__links page activePage" >'+
                     k +
@@ -406,16 +396,21 @@ class Table {
                     k +
                     '</a>';
             }
-
-
         }
-        if(pages > 1){
+        if( pages >= 7){
+            if( currentPage < pages - 1 ){
+                if( currentPage < pages - 2 ){
+                    divPaginationElm += '<a class="pagination__links"> ... </a>';
+                }
+                divPaginationElm += '<a class="pagination__links page"> ' + pages + ' </a>';
+            }
+        }
+        if(currentPage < pages){
             divPaginationElm += '<a class="pagination__links nextPage"> Next </a>';
         }
 
+
         divPaginationElm += '</div>';
-
-
         t.data = data.slice ( (currentPage - 1) * rowsPerPage, currentPage * rowsPerPage );
         return divPaginationElm;
     };
@@ -494,6 +489,7 @@ document.addEventListener ( 'DOMContentLoaded', function () {
         ["Gavin Cortez", "Team Leader", "San Francisco", "2860", "2008/10/26", "$235,500"],
         ["Martena Mccray", "Post-Sales support", "Edinburgh", "8240", "2011/03/09", "$324,050"],
         ["Unity Butler", "Marketing Designer", "San Francisco", "5384", "2009/12/09", "$85,675"]
+
     ];
 
 

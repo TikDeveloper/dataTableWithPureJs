@@ -78,14 +78,7 @@
 .activePage {
     background: black;
 }
-/*#pagination__linkPrev, #pagination__linkNext{*/
-/*    box-sizing: border-box;*/
-/*    padding: .5em 1em;*/
-/*    margin-left: 2px;*/
-/*    text-align: center;*/
-/*    text-decoration: none;*/
-/*    cursor: pointer;*/
-/*    border: 1px solid #ffffff;*/
-/*    border-radius: 2px;*/
-/*    color: #ffffff !important;*/
-/*}*/
+
+.hidden{
+    display: none;
+}
